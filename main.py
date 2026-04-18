@@ -1,8 +1,11 @@
 from wake_word import listen_for_wake_word
+from STT import STT
 
 
 def on_wake():
-    print("[Wall-E]")
+    stt = STT()
+    stt.start()
+
 
 
 if __name__ == "__main__":
