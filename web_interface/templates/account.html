@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+
+{% block content %}
+<style>
+
+  .account-wrapper {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 16px;
+  }
+
+  .profile-card {
+    width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(244,208,63,0.1);
+    position: relative;
+  }
+
+  .card-banner {
+    height: 110px;
+    background: var(--bg);
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .card-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 60%, rgba(244,208,63,0.15) 0%, transparent 55%),
+      radial-gradient(circle at 80% 30%, rgba(244,208,63,0.07) 0%, transparent 45%);
+  }
+
+  .banner-btn {
+    background: transparent;
+    border: 1px solid rgba(244,208,63,0.3);
+    color: var(--accent);
+    font-family: "Nunito", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    z-index: 1;
+    position: relative;
+  }
+
+  .banner-btn.danger {
+    border-color: rgba(255,77,77,0.35);
+    color: #ff4d4d;
+  }
+
+  .avatar-wrap {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 65px;
+    z-index: 2;
+  }
+
+  .avatar-ring {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .avatar-ring img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    font-weight: 700;
+    background: #1a1f2e;
+    color: var(--accent);
+  }
+
+  .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transition: 0.2s;
+  }
+
+  .avatar-ring:hover .avatar-overlay {
+    opacity: 1;
+  }
+
+  #avatar-input {
+    display: none;
+  }
+
+  .card-body {
+    padding: 58px 28px 28px;
+    text-align: center;
+  }
+
+  .user-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .user-sub {
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+
+  .user-email {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .field-group {
+    text-align: left;
+    margin-bottom: 12px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .field-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .field-row input {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .save-btn {
+    padding: 9px 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .divider {
+    margin: 18px 0;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .logout-full {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255,77,77,0.35);
+    border-radius: 10px;
+    background: transparent;
+    color: #ff4d4d;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+</style>
+
+<div class="account-wrapper">
+  <div class="profile-card">
+    <div class="card-banner"></div>
+
+    <div class="avatar-wrap">
+      <div class="avatar-ring" onclick="document.getElementById('avatar-input').click()">
+          <img src="{{ url_for('static', filename=user.avatar) }}">
+
+
+        <div class="avatar-overlay">📷</div></div>
+      <input type="file" id="avatar-input" accept="image/*"></div>
+
+
+    <div class="card-body">
+
+      <div class="user-name">{{ user.username }}</div>
+      <div class="user-email">{{ user.email }}</div>
+
+
+      <form method="POST" action="{{ url_for('auth.update_account') }}">
+
+        <div class="field-group">
+          <div class="field-label">Your Name</div>
+          <div class="field-row">
+            <input type="text" name="username" value="{{ user.username }}">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Robot Name</div>
+          <div class="field-row">
+            <input type="text" name="robot_name"
+                   value="{{ user.robot_name if user.robot_name else 'Wall-E' }}">
+          </div>
+        </div>
+
+        <button type="submit" class="save-btn">Save All</button>
+
+      </form>
+
+      <hr class="divider">
+<form id="logout-form" method="POST" action="{{ url_for('auth.logout') }}"></form>
+<button class="logout-full"
+
+        onclick="document.getElementById('logout-form').submit()">
+  Log Out
+</button>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.getElementById('avatar-input').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  fetch("auth/account/avatar", {
+    method: "POST",
+    body: formData
+  }).then(() => location.reload());
+});
+</script>
+
+{% endblock %}

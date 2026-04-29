@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}PDF{% endblock %}
+{% block content %}
+<style>
+
+label {
+    margin-left: -25px;
+}
+
+.page {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:80vh;
+}
+
+.card {
+    background:#1e293b;
+    padding:40px;
+    border-radius:16px;
+    width:340px;
+    text-align:center;
+    color:white;
+}
+
+input { display:none; }
+
+.upload-icon {
+    width:120px;
+    cursor:pointer;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.file-name {
+    margin-top:10px;
+    color:#cbd5e1;
+}
+
+.btn {
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.summarize {
+    background:#3b82f6;
+    color:white;
+}
+
+.qa {
+    background:#10b981;
+    color:white;
+}
+
+.result {
+    margin-top:10px;
+    font-size:14px;
+    color:#a7f3d0;
+}
+</style>
+
+<div class="page">
+<div class="card">
+
+    <h2>PDF Tool</h2>
+
+    <input type="file" id="fileInput" accept="application/pdf">
+
+    <label for="fileInput">
+        <img  class="upload-icon"
+             src="static/pdf.svg">
+    </label>
+
+    <div class="file-name" id="fileName">No file selected</div>
+
+    <button class="btn summarize" onclick="summarize()">Summarize</button>
+    <button class="btn qa" onclick="ask()">Q&A</button>
+
+    <div class="result" id="result"></div>
+
+</div>
+</div>
+
+<script>
+let uploadedFile = null;
+
+const fileInput = document.getElementById("fileInput");
+const fileName = document.getElementById("fileName");
+const result = document.getElementById("result");
+
+fileInput.addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    fileName.textContent = file.name;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("pdf/upload", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+    uploadedFile = data.filename;
+});
+
+async function summarize() {
+    if (!uploadedFile) return alert("Upload a file first");
+
+    const res = await fetch("pdf/summarize", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({filename: uploadedFile})
+    });
+
+    const data = await res.json();
+    result.textContent = data.result;
+}
+
+async function ask() {
+    if (!uploadedFile) return alert("Upload a file first");
+
+    const question = prompt("Ask a question:");
+    if (!question) return;
+
+    const res = await fetch("pdf/qa", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            filename: uploadedFile,
+            question: question
+        })
+    });
+
+    const data = await res.json();
+    result.textContent = data.answer;
+}
+</script>
+
+{%endblock %}

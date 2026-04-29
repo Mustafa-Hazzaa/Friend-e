@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Programming - Wall-E{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+  <div class="row align-items-start">
+
+    <div class="col-md-4 col-12 d-flex flex-column align-items-center">
+      <img src="{{ url_for('static', filename='eve.png') }}"
+           class="img-fluid rounded robot-img"
+           alt="Robot Preview">
+    </div>
+
+    <div class="col-md-8 col-12">
+
+      <div class="d-flex gap-2 flex-wrap mb-2">
+        <button class="btn btn-success" onclick="runCode()">
+          <i class="far fa-play-circle"></i> Run
+        </button>
+        <button class="btn btn-danger" onclick="stopCode()">
+          <i class="far fa-stop-circle"></i> Stop
+        </button>
+        <button class="btn btn-primary" onclick="saveFile()">
+          <i class="far fa-save"></i> Save
+        </button>
+        <button class="btn btn-info" onclick="$('#customFile').click()">
+          <i class="fas fa-file-upload"></i> Load
+        </button>
+      </div>
+
+      <div id="blocklyDiv"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- hidden elements main.js expects -->
+<div style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;">
+  <img id="stream" src="">
+  <div id="joystick"><div id="limit"><div id="base"></div><div id="stick"></div></div></div>
+  <div id="joytext"></div>
+  <a id="ardu-area"></a>
+  <div id="batt-area"><i id="batt-icon"></i><div id="batt-text"></div></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+#blocklyDiv {
+  width: 100%;
+  height: calc(100vh - 160px);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.robot-img {
+  max-width: 320px;
+  width: 100%;
+  border-radius: 12px;
+}
+</style>
+
+<script>
+  var audio_options = [];
+</script>
+{% endblock %}

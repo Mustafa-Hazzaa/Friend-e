@@ -1,0 +1,90 @@
+.wrapper {
+  height: calc(100vh - 80px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  width: 360px;
+  background: #161b22;
+  border: 1px solid #2d3748;
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(245,166,35,0.08);
+}
+
+.robot-icon {
+  font-size: 42px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 10px #f5a623);
+}
+
+.card h2 {
+  color: #e6edf3;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #8b949e;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.card input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px solid #2d3748;
+  background: #0d1117;
+  color: #e6edf3;
+  outline: none;
+}
+
+.card input:focus {
+  border-color: #f5a623;
+  box-shadow: 0 0 10px rgba(245,166,35,0.2);
+}
+
+.card button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #f5a623;
+  color: #0d1117;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.card button:hover {
+  transform: scale(1.03);
+}
+
+.link-text {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.link-text a {
+  color: #3ecfcf;
+  text-decoration: none;
+}
+
+.error-msg {
+  color: #ff4d4d;
+  font-size: 12px;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.2s ease, margin 0.2s ease;
+}
+
+.error-msg:not(:empty) {
+  max-height: 40px;
+  margin: 0 0 4px 0;
+}

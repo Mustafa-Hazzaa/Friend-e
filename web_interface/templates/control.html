@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Control{% endblock %}
+
+{% block content %}
+<div class="row">
+
+    <div class="col-sm-12 col-md-6">
+        <div class="media">
+            <img id="stream"
+                 class="stream{% if cameraActive == 1 %} starting{% endif %}"
+                 src="{{ url_for('static', filename='streamimage.jpg') }}">
+        </div>
+    </div>
+
+    <div class="col-sm-12 col-md-6">
+        <div id="joytext" class="joystick-text">x: 0, y: 0</div>
+        <div id="joystick" class="joystick">
+            <div id="limit" class="limit border border-secondary rounded-circle">
+                <div id="base" class="base border border-secondary rounded-circle"></div>
+                <div id="stick" class="stick border border-dark rounded-circle" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- SERVO DRAWER -->
+<div class="s-drawer" id="s-drawer">
+  <div class="s-toggle" onclick="document.getElementById('s-drawer').classList.toggle('open')">
+    <div class="s-toggle-left">
+      <div class="s-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f0c040" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </div>
+      <div>
+        <div class="s-title">Servo Controls</div>
+        <div class="s-sub">arms · neck · eyes</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="mode-wrap" onclick="event.stopPropagation()">
+        <button id="auto-anime" class="mode-btn"        onclick="setMode(1)">auto</button>
+        <button id="manu-anime" class="mode-btn active" onclick="setMode(0)">manual</button>
+      </div>
+      <span class="s-chevron">▾</span>
+    </div>
+  </div>
+
+  <div class="s-body">
+    <div class="s-grid">
+
+      <!-- ARMS -->
+      <div>
+        <div class="s-group-label">Arms</div>
+        <div class="s-row">
+          <span class="s-label">Left</span>
+          <input class="s-range" type="range" id="arm-left" min="0" max="100" value="50" oldvalue="50" oninput="sv(this,'arm-left-val','L')">
+          <span class="s-val" id="arm-left-val">50</span>
+        </div>
+        <div class="s-row">
+          <span class="s-label">Right</span>
+          <input class="s-range" type="range" id="arm-right" min="0" max="100" value="50" oldvalue="50" oninput="sv(this,'arm-right-val','R')">
+          <span class="s-val" id="arm-right-val">50</span>
+        </div>
+        <div class="s-presets">
+          <button class="s-pill"        onclick="sp(this,{'arm-left':[100,'L'],'arm-right':[0,'R']})">left</button>
+          <button class="s-pill active" id="arms-neutral" onclick="sp(this,{'arm-left':[50,'L'],'arm-right':[50,'R']})">neutral</button>
+          <button class="s-pill"        onclick="sp(this,{'arm-left':[0,'L'],'arm-right':[100,'R']})">right</button>
+        </div>
+      </div>
+
+      <!-- NECK -->
+      <div>
+        <div class="s-group-label">Neck</div>
+        <div class="s-row">
+          <span class="s-label">Top</span>
+          <input class="s-range" type="range" id="neck-top" min="0" max="100" value="100" oldvalue="100" oninput="sv(this,'neck-top-val','T')">
+          <span class="s-val" id="neck-top-val">100</span>
+        </div>
+        <div class="s-row">
+          <span class="s-label">Bottom</span>
+          <input class="s-range" type="range" id="neck-bottom" min="0" max="100" value="0" oldvalue="0" oninput="sv(this,'neck-bottom-val','B')">
+          <span class="s-val" id="neck-bottom-val">0</span>
+        </div>
+        <div class="s-row">
+          <span class="s-label">Rotate</span>
+          <input class="s-range" type="range" id="head-rotation" min="0" max="100" value="50" oldvalue="50" oninput="sv(this,'head-rot-val','G')">
+          <span class="s-val" id="head-rot-val">50</span>
+        </div>
+        <div class="s-presets">
+          <button class="s-pill"        id="head-up"      onclick="sp(this,{'neck-top':[0,'T'],'neck-bottom':[50,'B']})">up</button>
+          <button class="s-pill active" id="head-neutral" onclick="sp(this,{'neck-top':[100,'T'],'neck-bottom':[0,'B']})">neutral</button>
+          <button class="s-pill"        id="head-down"    onclick="sp(this,{'neck-top':[0,'T'],'neck-bottom':[0,'B']})">down</button>
+        </div>
+      </div>
+
+      <!-- EYES -->
+      <div>
+        <div class="s-group-label">Eyes</div>
+        <div class="s-row">
+          <span class="s-label">Left</span>
+          <input class="s-range" type="range" id="eye-left" min="0" max="100" value="40" oldvalue="40" oninput="sv(this,'eye-left-val','j')">
+          <span class="s-val" id="eye-left-val">40</span>
+        </div>
+        <div class="s-row">
+          <span class="s-label">Right</span>
+          <input class="s-range" type="range" id="eye-right" min="0" max="100" value="40" oldvalue="40" oninput="sv(this,'eye-right-val','k')">
+          <span class="s-val" id="eye-right-val">40</span>
+        </div>
+        <div class="s-presets">
+          <button class="s-pill active" id="eyes-neutral" onclick="sp(this,{'eye-left':[40,'j'],'eye-right':[40,'k']})">neutral</button>
+          <button class="s-pill"        id="eyes-sad"     onclick="sp(this,{'eye-left':[0,'j'],'eye-right':[0,'k']})">sad</button>
+          <button class="s-pill"        id="eyes-left"    onclick="sp(this,{'eye-left':[0,'j'],'eye-right':[100,'k']})">left</button>
+          <button class="s-pill"        id="eyes-right"   onclick="sp(this,{'eye-left':[100,'j'],'eye-right':[0,'k']})">right</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TTS BAR -->
+<div class="tts-bar">
+  <span class="tts-label">SAY·THIS</span>
+  <input class="tts-input" type="text" id="tts_text" placeholder="Type something for Wall·E to say…" maxlength="300">
+  <button class="tts-btn" onclick="playTTS($('#tts_text').val())">▶ speak</button>
+</div>
+<div id="audio-progress"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+document.getElementById('s-drawer').classList.add('open');
+document.getElementById('tts_text').addEventListener('keydown', e => { if(e.key==='Enter') playTTS($('#tts_text').val()); });
+
+function sv(el, labelId, code) {
+  document.getElementById(labelId).textContent = el.value;
+  servoControl(el, code, el.value);
+}
+
+function sp(btn, vals) {
+  btn.closest('.s-presets').querySelectorAll('.s-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  Object.entries(vals).forEach(([id, [val, code]]) => {
+    var el = document.getElementById(id);
+    el.value = el.oldvalue = val;
+    document.getElementById(id+'-val').textContent = val;
+    servoControl(el, code, val);
+  });
+}
+
+function setMode(isAuto) {
+  document.getElementById('auto-anime').classList.toggle('active',  isAuto);
+  document.getElementById('manu-anime').classList.toggle('active', !isAuto);
+  sendSettings('animeMode', isAuto);
+  servoInputs(!isAuto);
+  document.querySelectorAll('.s-range,.s-pill').forEach(el => el.disabled = isAuto);
+}
+</script>
+{% endblock %}

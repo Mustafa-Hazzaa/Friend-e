@@ -1,0 +1,71 @@
+{% extends "card.html" %}
+
+{% block title %}sign up{% endblock %}
+
+{% block card_content %}
+
+
+    <h2>Make A New Friend</h2>
+    <p class="subtitle">Create your account to start learning</p>
+
+    <form  method="POST" autocomplete="off">
+      <input type="text" name="username" id="username" placeholder="UserName" required />
+
+      <input type="email" name="email" id="email" placeholder="Email" required />
+
+      <input type="password" name="password" id="password" placeholder="Password"  autocomplete="new-password" required  />
+        <p class="error-msg" id="password_error"></p>
+
+        <input type="password" name="confirm_password" id="confirm password" placeholder="confirm password" required />
+        <p class="error-msg" id="confirm_error"></p>
+
+        <button type="submit">sign up</button>
+        <p class="error-msg" id="email_error">{{ error if error }}</p>
+
+    </form>
+
+    <p class="link-text">
+      Already have an account? <a href="{{ url_for('auth.login') }}">log in</a>
+    </p>
+
+
+<script>
+const password = document.getElementById("password");
+const confirm = document.getElementById("confirm_password");
+const confirm_error = document.getElementById("confirm_error");
+const password_error = document.getElementById("password_error");
+const form = document.querySelector("form");
+
+
+function checkPasswords() {
+    password_error.textContent = "";
+    confirm_error.textContent = "";
+
+    if (password.value.length > 0 && password.value.length < 8) {
+        password_error.textContent = "Password must be at least 8 characters";
+    }
+
+
+    if (confirm.value.length > 0 && password.value !== confirm.value) {
+        confirm_error.textContent = "Passwords do not match";
+    }
+
+}
+password.addEventListener("blur", checkPasswords);
+confirm.addEventListener("blur", checkPasswords);
+
+form.addEventListener("submit", function(e) {
+
+    checkPasswords();
+
+    if (
+        password.value.length < 8 ||
+        password.value !== confirm.value
+    ) {
+        e.preventDefault();
+    }
+});
+</script>
+
+{% endblock %}
+
