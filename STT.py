@@ -7,6 +7,11 @@ import threading
 
 
 class STT:
+    SAMPLE_RATE = 16000
+    BLOCK_SIZE = 480
+    MODEL_SIZE = "medium"
+    SILENCE_DURATION = 1.5
+
     def __init__(self, on_text):
         self.on_text = on_text
         self._armed = False
@@ -29,7 +34,7 @@ class STT:
         self._silence_counter = 0.0
         print("[STT] Listening...")
 
-    def _audio_callback(self, indata):
+    def _audio_callback(self, indata, frames, time_info, status):
         if not self._armed:
             return
 

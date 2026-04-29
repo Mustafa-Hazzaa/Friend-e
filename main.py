@@ -1,12 +1,6 @@
-from wake_word import listen_for_wake_word
-from STT import STT
-
-
-def on_wake():
-    stt = STT()
-    stt.start()
-
+from web_interface import create_app
+app = create_app()
 
 
 if __name__ == "__main__":
-    listen_for_wake_word(on_wake)
+    app.run(debug=True,host='0.0.0.0')
