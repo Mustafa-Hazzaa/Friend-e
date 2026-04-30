@@ -7,6 +7,11 @@ label {
     margin-left: -25px;
 }
 
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .page {
     display:flex;
     justify-content:center;
@@ -57,6 +62,11 @@ input { display:none; }
     color:white;
 }
 
+.teachback {
+    background: #b91024;
+    color:white;
+}
+
 .result {
     margin-top:10px;
     font-size:14px;
@@ -78,8 +88,9 @@ input { display:none; }
 
     <div class="file-name" id="fileName">No file selected</div>
 
-    <button class="btn summarize" onclick="summarize()">Summarize</button>
-    <button class="btn qa" onclick="ask()">Q&A</button>
+    <button class="btn summarize" id ="summarizeBtn" onclick="summarize()" disabled>Summarize</button>
+    <button class="btn qa" id="qaBtn" onclick="ask()" disabled>Q&A</button>
+    <button class="btn teachback" id="teachbackBtn" onclick="teachback()" disabled>Teachback</button>
 
     <div class="result" id="result"></div>
 
@@ -109,6 +120,17 @@ fileInput.addEventListener("change", async function () {
 
     const data = await res.json();
     uploadedFile = data.filename;
+
+if (data.filename) {
+    uploadedFile = data.filename;
+
+    localStorage.setItem("uploadedFile", uploadedFile);
+    localStorage.setItem("uploadedFileName", file.name);
+
+    summarizeBtn.disabled = false;
+    qaBtn.disabled = false;
+    teachbackBtn.disabled = false;
+}
 });
 
 async function summarize() {
@@ -142,6 +164,40 @@ async function ask() {
     const data = await res.json();
     result.textContent = data.answer;
 }
+
+async function teachback() {
+    if (!uploadedFile) return alert("Upload a file first");
+
+    const res = await fetch("pdf/teachback", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ filename: uploadedFile })
+    });
+
+    const data = await res.json();
+    result.textContent = data.result;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    const summarizeBtn = document.getElementById("summarizeBtn");
+    const qaBtn = document.getElementById("qaBtn");
+    const teachbackBtn = document.getElementById("teachbackBtn");
+
+    const savedFile = localStorage.getItem("uploadedFile");
+    const savedFileName = localStorage.getItem("uploadedFileName");
+
+    if (savedFile) {
+        uploadedFile = savedFile;
+
+        fileName.textContent = savedFileName;
+
+        summarizeBtn.disabled = false;
+        qaBtn.disabled = false;
+        teachbackBtn.disabled = false;
+    }
+});
+
+
 </script>
 
 {%endblock %}

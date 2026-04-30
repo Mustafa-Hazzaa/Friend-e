@@ -24,9 +24,9 @@ def dashboard():
 def pdf_page():
     return render_template("pdf.html", active_page="pdf",user=current_user)
 
-@view.route("/teachback")
-def teachback():
-    return render_template("teachback.html", active_page="teachback",user=current_user)
+@view.route("/Games")
+def Games():
+    return render_template("Games.html", active_page="Games",user=current_user)
 
 @view.route("/settings")
 @login_required
