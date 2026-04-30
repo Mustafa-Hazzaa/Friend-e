@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 
 view = Blueprint('view', __name__)
 
-@view.route("/")
+
 @view.route("/home")
 @login_required
 def home():
@@ -13,6 +13,7 @@ def home():
 def about():
     return render_template('about.html')
 
+@view.route("/")
 @view.route("/dashboard")
 @login_required
 def dashboard():

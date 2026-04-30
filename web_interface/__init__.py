@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 
 from web_interface import control
-from web_interface.config import Config
+import config
 
 db = SQLAlchemy()
 DB_NAME = "database.db"
@@ -16,11 +16,13 @@ DB_NAME = "database.db"
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_pyfile(os.path.join(os.path.dirname(__file__), '..', 'config.py'))
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + DB_NAME
     db.init_app(app)
+
+    print(app.config.get("CODEBLOCK_MOTORPOWER"))
 
     from web_interface.auth import auth
     from web_interface.view import view
