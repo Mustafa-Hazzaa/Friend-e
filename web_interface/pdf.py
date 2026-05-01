@@ -1,6 +1,8 @@
 import os
-from flask import Blueprint, request, current_app, jsonify
+from flask import Blueprint, request, current_app
 from werkzeug.utils import secure_filename
+
+from website_AI import AIPlanner
 
 pdf = Blueprint('pdf', __name__)
 
@@ -32,11 +34,9 @@ def summarize():
     upload_folder = current_app.config["UPLOAD_FOLDER"]
     path = os.path.join(upload_folder, filename)
 
-    from .ai import AIPlanner
     ai = AIPlanner()
-
     summary = ai.summarize(path)
-
+    print(summary)
     return {"summary": summary}
 
 

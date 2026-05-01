@@ -7,8 +7,8 @@ view = Blueprint('view', __name__)
 @view.route("/")
 @view.route("/home")
 def home():
-    # if current_user.is_authenticated:
-    #     return redirect(url_for("view.dashboard"))
+    if current_user.is_authenticated:
+        return redirect(url_for("view.dashboard"))
 
     return render_template("home.html", user=current_user)
 
@@ -44,3 +44,17 @@ def programming():
 @login_required
 def account():
     return render_template("account.html", active_page="account",user=current_user)
+
+@view.route("/monitoring")
+@login_required
+def monitoring():
+    #     if request.method == "POST":
+    #     password = request.form.get("password")
+    #
+    #     if current_user.check_password(password):
+    #         session["tab_access_granted"] = True
+    #         return redirect(url_for("protected_tab"))
+    #
+    #     return "Wrong password", 401
+    #
+    return render_template("monitor.html")
