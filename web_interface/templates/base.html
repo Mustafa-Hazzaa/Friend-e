@@ -45,7 +45,7 @@
       background-repeat: no-repeat;
       background-attachment: fixed;
       background-size: cover;
-
+        padding-top: env(safe-area-inset-top);
     }
 
     .navbar {
@@ -143,22 +143,43 @@
     }
 
     @media (max-width: 680px) {
-      .navbar {
-        padding: 0 10px;
-      }
+        body {
+    background-image: url("{{ url_for('static', filename='mobile_background.jpg') }}");
+    background-size: cover;
+    background-position: center;
+  }
+    .navbar {
+    height: 60px;
+    padding: 0 8px;
+  }
 
-      .nav-link {
-        font-size: 14px;
-        padding: 5px 10px;
-      }
+  .nav-links {
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-      .status {
-        display: none;
-      }
-          .logo-img {
-          max-width: 85px;
-      }
-    }
+  .nav-link {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .logo-img {
+    max-width: 70px;
+  }
+
+    main {
+    padding-top: 70px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+        .flash {
+    min-width: auto;
+    width: 90%;
+    font-size: 14px;
+  }
+}
+
 
 
 .flash-wrapper {
@@ -206,14 +227,15 @@
     <div class="logo">
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Friend-E Logo" class="logo-img">
     </div>
+
     {% if user.is_authenticated %}
+
     <div class="nav-links">
       <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
          href="{{ url_for('view.dashboard') }}">
         Dashboard
       </a>
-
-        <div class="nav-links">
+        
       <a class="nav-link {% if active_page == 'programming' %}active{% endif %}"
          href="{{ url_for('view.programming') }}">
         programming

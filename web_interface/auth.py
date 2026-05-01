@@ -88,7 +88,7 @@ def update_account():
     return redirect(url_for("auth.account"))
 
 import os
-from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename      
 
 
 @auth.route("/account/avatar", methods=["POST"])

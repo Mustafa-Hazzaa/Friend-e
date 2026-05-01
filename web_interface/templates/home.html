@@ -1,2 +1,272 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Friend·E — A New Way to Learn{% endblock %}
+
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+
+<style>
+
+
+html, body {
+      overflow-x: hidden;
+  overflow-y: auto;
+}
+
+
+.hero-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding-left: 8vw;
+  padding-bottom: 80px;
+  pointer-events: none;
+    gap: 3px;
+}
+
+
+.eyebrow {
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(232,236,244,0.45);
+  margin-bottom: 18px;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.9);
+}
+
+.rule {
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(to right, #f5a623, transparent);
+  margin-bottom: 22px;
+  opacity: 0.8;
+}
+
+
+.carousel-wrap {
+  position: relative;
+  width: 600px;
+  height: 130px;
+  perspective: 900px;
+}
+
+.ctext {
+  position: absolute;
+  width: 100%;
+  font-family: 'Cinzel', serif;
+  font-size: 2.3rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  opacity: 0;
+  text-shadow: 0 2px 28px rgba(0,0,0,0.8);
+  color: #e8ecf4;
+  line-height: 1.15;
+}
+
+.carousel-wrap.ready .ctext {
+  transition: all 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ctext.active {
+  transform: translateY(0) translateZ(80px) scale(1);
+  opacity: 1;
+  z-index: 3;
+}
+
+
+.ctext.next {
+  transform: translateY(-50px) translateZ(-60px) scale(0.8);
+  opacity: 0.35;
+  filter: blur(1.5px);
+  z-index: 2;
+}
+
+
+.ctext.prev {
+  transform: translateY(50px) translateZ(-60px) scale(0.8);
+  opacity: 0.25;
+  filter: blur(1.5px);
+  z-index: 1;
+}
+
+.ctext .accent { color: #f5a623; }
+
+
+.cta-card {
+  pointer-events: all;
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+
+  background: rgba(8, 14, 30, 0.55);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: 100px;
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  padding: 14px 34px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: rgba(232,236,244,0.75);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  box-shadow:
+    0 0 0 1px rgba(245,166,35,0.07),
+    0 12px 48px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+
+  animation: floatUp 1s 0.4s both;
+}
+
+.cta-card a {
+  color: #f5a623;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 0.2s, text-shadow 0.2s;
+}
+.cta-card a:hover {
+  color: #ffd07a;
+  text-shadow: 0 0 14px rgba(245,166,35,0.55);
+}
+
+/*!* pulsing dot *!*/
+/*.cta-dot {*/
+/*  width: 7px; height: 7px;*/
+/*  border-radius: 50%;*/
+/*  background: #f5a623;*/
+/*  flex-shrink: 0;*/
+/*  animation: pulse 2.2s infinite;*/
+/*}*/
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.65); }
+}
+
+@keyframes floatUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(18px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@media (max-width: 768px) {
+
+
+  .hero-wrap {
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    padding-top: 90px;
+    padding-left: 6vw;
+    padding-right: 6vw;
+    padding-bottom: 0;
+  }
+
+
+  .carousel-wrap {
+      padding-top: 40px;
+      width: min(600px, 90vw);
+      height: 150px;
+      perspective: 500px;
+      margin-top: 10px;
+  }
+
+
+  .ctext {
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
+
+  /* ✅ softer 3D */
+  .ctext.next {
+    transform: translateY(-40px) translateZ(-35px) scale(0.9);
+  }
+
+  .ctext.prev {
+    transform: translateY(25px) translateZ(-35px) scale(0.9);
+  }
+
+
+  .cta-card {
+    width: 90%;
+    font-size: 0.8rem;
+    padding: 12px 18px;
+    bottom: 20px;
+  }
+
+  .eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+  }
+
+  .rule {
+    width: 60px;
+  }
+}
+</style>
+
+<!-- Stars canvas -->
+<canvas id="stars"></canvas>
+
+<!-- Hero text -->
+<div class="hero-wrap">
+  <p class="eyebrow">ITE Robotic Club &nbsp;·&nbsp; Damascus University &nbsp;·&nbsp; 2026</p>
+  <div class="rule"></div>
+
+  <div class="carousel-wrap" id="carousel">
+    <div class="ctext">make a new <span class="accent">friend</span></div>
+    <div class="ctext">learn, play &amp; <span class="accent">grow</span></div>
+    <div class="ctext">take a look at the <span class="accent">future</span></div>
+    <div class="ctext">a new way to <span class="accent">learn</span></div>
+  </div>
+</div>
+
+<!-- Sign-up CTA -->
+<div class="cta-card">
+  <span class="cta-dot"></span>
+  <a href="{{ url_for('auth.signUp') }}">Sign Up</a> and let your journey start
+</div>
+
+<script>
+
+(function () {
+  const texts    = document.querySelectorAll('.ctext');
+  const carousel = document.getElementById('carousel');
+  let   index    = 0;
+
+  function setState() {
+    texts.forEach(t => t.classList.remove('active', 'next', 'prev'));
+    const total = texts.length;
+    texts[index].classList.add('active');
+    texts[(index + 1) % total].classList.add('next');
+    texts[(index - 1 + total) % total].classList.add('prev');
+  }
+
+  // Set initial state before transitions are enabled
+  setState();
+
+  requestAnimationFrame(() => {
+    carousel.classList.add('ready');
+  });
+
+  setInterval(() => {
+    index = (index + 1) % texts.length;
+    setState();
+  }, 2800);
+})();
+</script>
+
+{% endblock %}

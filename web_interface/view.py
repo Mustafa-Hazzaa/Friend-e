@@ -1,23 +1,26 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, url_for, redirect
 from flask_login import login_required, current_user
 
 view = Blueprint('view', __name__)
 
 
-@view.route("/home")
-@login_required
-def home():
-    return render_template('home.html',user=current_user)
-
-@view.route("/about")
-def about():
-    return render_template('about.html')
-
 @view.route("/")
+@view.route("/home")
+def home():
+    # if current_user.is_authenticated:
+    #     return redirect(url_for("view.dashboard"))
+
+    return render_template("home.html", user=current_user)
+
+
 @view.route("/dashboard")
 @login_required
 def dashboard():
     return render_template("control.html", active_page="dashboard",user=current_user)
+
+@view.route("/about")
+def about():
+    return render_template('about.html')
 
 @view.route("/pdf")
 @login_required

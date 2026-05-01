@@ -349,5 +349,5 @@ function loadFile(file) {
     if (file) {
         reader.readAsText(file);
     }
-
 }
+

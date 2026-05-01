@@ -22,7 +22,6 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + DB_NAME
     db.init_app(app)
 
-    print(app.config.get("CODEBLOCK_MOTORPOWER"))
 
     from web_interface.auth import auth
     from web_interface.view import view
