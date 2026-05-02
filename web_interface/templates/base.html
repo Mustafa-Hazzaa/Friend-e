@@ -18,7 +18,18 @@
     html {
   visibility: hidden;
 }
-
+.avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  background: #3ecfcf;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border: none;
+  overflow: hidden;
+  padding: 0;
+}
   html.loaded {
   visibility: visible;
 }
@@ -125,16 +136,6 @@
       box-shadow: 0 0 6px #4ade80;
     }
 */
-    .avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: #3ecfcf;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      border: none;
-    }
 
     main {
       padding-top: 80px;
@@ -257,7 +258,7 @@
       </a>
 
         <a class="nav-link {% if active_page == 'monitor' %}active{% endif %}"
-         href="{{ url_for('view.monitoring') }}">
+         href="{{ url_for('view.monitor') }}">
         Overview
       </a>
       {%endif%}
@@ -270,15 +271,18 @@
 <!--        Online-->
 <!--      </div>-->
 
-      <button class="avatar">
-        {% if not user.is_authenticated %}
-        <a href="{{ url_for('auth.login') }}"> <img src="{{ user.avatar }}" alt="Avatar"></a>
-        {% else %}
-          <a href="{{ url_for('view.account') }}"> <img src="{{ user.avatar }}" alt="Avatar"></a>
-        {% endif %}
-      </button>
-    </div>
-
+        <button class="avatar">
+          {% if not user.is_authenticated %}
+          <a href="{{ url_for('auth.login') }}">
+            👤
+          </a>
+          {% else %}
+          <a href="{{ url_for('view.account') }}">
+            <img src="{{ url_for('static', filename=user.avatar) }}"
+                 style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
+          </a>
+          {% endif %}
+        </button>
   </nav>
 
 <div class="flash-wrapper">

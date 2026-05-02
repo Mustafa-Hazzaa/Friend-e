@@ -3,201 +3,500 @@
 {% block content %}
 <style>
 
-label {
-    margin-left: -25px;
-}
+/* ── Page layout ───────────────────────────── */
+label { margin-left: -25px; }
 
 button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .page {
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
 }
 
 .card {
-    background:#1e293b;
-    padding:40px;
-    border-radius:16px;
-    width:340px;
-    text-align:center;
-    color:white;
+  background: #1e293b;
+  padding: 40px;
+  border-radius: 16px;
+  width: 340px;
+  text-align: center;
+  color: white;
 }
 
-input { display:none; }
+input[type="file"] { display: none; }
 
 .upload-icon {
-    width:120px;
-    cursor:pointer;
-    justify-content: center;
-    align-items: center;
-
+  width: 120px;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
 }
 
 .file-name {
-    margin-top:10px;
-    color:#cbd5e1;
+  margin-top: 10px;
+  color: #cbd5e1;
 }
 
 .btn {
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  transition: opacity 0.15s, transform 0.15s;
 }
 
-.summarize {
-    background:#3b82f6;
-    color:white;
-}
+.btn:not(:disabled):hover { transform: translateY(-1px); opacity: 0.9; }
 
-.qa {
-    background:#10b981;
-    color:white;
-}
-
-.teachback {
-    background: #fa3a4f;
-    color:white;
-}
+.summarize  { background: #3b82f6; color: white; }
+.qa         { background: #10b981; color: white; }
+.teachback  { background: #fa3a4f; color: white; }
+.quiz       { background: #f1d318; color: #0d1117; }
 
 .result {
-    margin-top:10px;
-    font-size:14px;
-    color:#a7f3d0;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #a7f3d0;
+}
+
+/* ══════════════════════════════════════════════
+   QUIZ POPUP OVERLAY
+══════════════════════════════════════════════ */
+.quiz-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.quiz-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Modal card */
+.quiz-modal {
+  background: #0f172a;
+  border: 1px solid #1e3a5f;
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  position: relative;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.quiz-overlay.open .quiz-modal {
+  transform: translateY(0) scale(1);
+}
+
+/* Wall-E eyes decoration */
+.modal-eyes {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-eye {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1d318;
+  box-shadow: 0 0 16px rgba(241, 211, 24, 0.45);
+  position: relative;
+}
+
+.modal-eye::after {
+  content: '';
+  width: 13px;
+  height: 13px;
+  background: #0f172a;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Close button */
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #e2e8f0;
+  background: rgba(255,255,255,0.06);
+}
+
+.modal-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #f1d318;
+  text-align: center;
+  margin: 0 0 6px;
+}
+
+.modal-sub {
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+/* Field labels */
+.modal-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+/* Question count stepper */
+.stepper-wrap { margin-bottom: 20px; }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  background: #1e293b;
+  border: 1px solid #1e3a5f;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 46px;
+}
+
+.stepper-btn {
+  width: 46px;
+  height: 46px;
+  background: none;
+  border: none;
+  color: #f1d318;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.stepper-btn:hover { background: rgba(241,211,24,0.08); }
+
+.stepper-val {
+  flex: 1;
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  user-select: none;
+}
+
+/* Difficulty pills */
+.diff-wrap { margin-bottom: 28px; }
+
+.diff-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.diff-pill {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #1e3a5f;
+  background: #1e293b;
+  color: #64748b;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.18s;
+  text-align: center;
+}
+
+.diff-pill:hover {
+  border-color: #f1d318;
+  color: #f1d318;
+}
+
+.diff-pill.active {
+  background: rgba(241,211,24,0.1);
+  border-color: #f1d318;
+  color: #f1d318;
+}
+
+/* Start button */
+.modal-start {
+  width: 100%;
+  padding: 13px;
+  background: #f1d318;
+  color: #0d1117;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(241,211,24,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.modal-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(241,211,24,0.35);
 }
 </style>
 
+<!-- ── Main card ───────────────────────────── -->
 <div class="page">
-<div class="card">
+  <div class="card">
 
     <h2>PDF Tool</h2>
 
     <input type="file" id="fileInput" accept="application/pdf">
 
     <label for="fileInput">
-        <img  class="upload-icon"
-             src="static/pdf.svg">
+      <img class="upload-icon" src="static/pdf.svg">
     </label>
 
     <div class="file-name" id="fileName">No file selected</div>
 
-    <button class="btn summarize" id ="summarizeBtn" onclick="summarize()" disabled>Summarize</button>
-    <button class="btn qa" id="qaBtn" onclick="ask()" disabled>Q&A</button>
-    <button class="btn teachback" id="teachbackBtn" onclick="teachback()" disabled>Teachback</button>
+    <button class="btn summarize" id="summarizeBtn" onclick="summarize()" disabled>Summarize</button>
+    <button class="btn quiz"      id="quizBtn"      onclick="openQuizModal()" disabled>Quiz</button>
+    <button class="btn qa"        id="qaBtn"         onclick="ask()" disabled>Q&amp;A</button>
+    <button class="btn teachback" id="teachbackBtn"  onclick="teachback()" disabled>Teachback</button>
 
     <div class="result" id="result"></div>
 
+  </div>
 </div>
+
+<!-- ── Quiz popup ──────────────────────────── -->
+<div class="quiz-overlay" id="quizOverlay">
+  <div class="quiz-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+    <button class="modal-close" onclick="closeQuizModal()" aria-label="Close">✕</button>
+
+    <div class="modal-eyes">
+      <div class="modal-eye"></div>
+      <div class="modal-eye"></div>
+    </div>
+
+    <h3 class="modal-title" id="modalTitle">Set up your Quiz</h3>
+    <p class="modal-sub">Wall-E will generate questions just for you!</p>
+
+    <!-- Question count -->
+    <div class="stepper-wrap">
+      <span class="modal-label">Number of questions</span>
+      <div class="stepper">
+        <button class="stepper-btn" id="stepDown" aria-label="Decrease">−</button>
+        <span   class="stepper-val" id="stepVal">5</span>
+        <button class="stepper-btn" id="stepUp"   aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <!-- Difficulty -->
+    <div class="diff-wrap">
+      <span class="modal-label">Difficulty</span>
+      <div class="diff-pills">
+        <button class="diff-pill"        data-val="easy">Easy</button>
+        <button class="diff-pill active" data-val="medium">Medium</button>
+        <button class="diff-pill"        data-val="hard">Hard</button>
+      </div>
+    </div>
+
+    <button class="modal-start" onclick="startQuiz()">
+      Let's go! →
+    </button>
+
+  </div>
 </div>
 
 <script>
 let uploadedFile = null;
+let quizCount      = 5;
+let quizDifficulty = 'medium';
 
-const fileInput = document.getElementById("fileInput");
-const fileName = document.getElementById("fileName");
-const result = document.getElementById("result");
+/* ── File upload ────────────────────────── */
+const fileInput    = document.getElementById("fileInput");
+const fileName     = document.getElementById("fileName");
+const result       = document.getElementById("result");
+const summarizeBtn = document.getElementById("summarizeBtn");
+const qaBtn        = document.getElementById("qaBtn");
+const teachbackBtn = document.getElementById("teachbackBtn");
+const quizBtn      = document.getElementById("quizBtn");
 
 fileInput.addEventListener("change", async function () {
-    const file = this.files[0];
-    if (!file) return;
+  const file = this.files[0];
+  if (!file) return;
 
-    fileName.textContent = file.name;
+  fileName.textContent = file.name;
 
-    const formData = new FormData();
-    formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
 
-    const res = await fetch("pdf/upload", {
-        method: "POST",
-        body: formData
-    });
+  const res  = await fetch("pdf/upload", { method: "POST", body: formData });
+  const data = await res.json();
 
-    const data = await res.json();
+  if (data.filename) {
     uploadedFile = data.filename;
-
-if (data.filename) {
-    uploadedFile = data.filename;
-
-    localStorage.setItem("uploadedFile", uploadedFile);
-    localStorage.setItem("uploadedFileName", file.name);
+    sessionStorage.setItem("uploadedFile",     uploadedFile);
+    sessionStorage.setItem("uploadedFileName", file.name);
 
     summarizeBtn.disabled = false;
-    qaBtn.disabled = false;
+    qaBtn.disabled        = false;
     teachbackBtn.disabled = false;
-}
+    quizBtn.disabled      = false;
+  }
 });
 
+/* ── Existing actions ───────────────────── */
 async function summarize() {
-    if (!uploadedFile) return alert("Upload a file first");
-
-    const res = await fetch("pdf/summarize", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({filename: uploadedFile})
-    });
-
-    const data = await res.json();
-    result.textContent = data.result;
+  if (!uploadedFile) return alert("Upload a file first");
+  const res  = await fetch("pdf/summarize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename: uploadedFile })
+  });
+  const data = await res.json();
+  result.textContent = data.result;
 }
 
 async function ask() {
-    if (!uploadedFile) return alert("Upload a file first");
-
-    const question = prompt("Ask a question:");
-    if (!question) return;
-
-    const res = await fetch("pdf/qa", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            filename: uploadedFile,
-            question: question
-        })
-    });
-
-    const data = await res.json();
-    result.textContent = data.answer;
+  if (!uploadedFile) return alert("Upload a file first");
+  const question = prompt("Ask a question:");
+  if (!question) return;
+  const res  = await fetch("pdf/qa", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename: uploadedFile, question })
+  });
+  const data = await res.json();
+  result.textContent = data.answer;
 }
 
 async function teachback() {
-    if (!uploadedFile) return alert("Upload a file first");
-
-    const res = await fetch("pdf/teachback", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ filename: uploadedFile })
-    });
-
-    const data = await res.json();
-    result.textContent = data.result;
+  if (!uploadedFile) return alert("Upload a file first");
+  const res  = await fetch("pdf/teachback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename: uploadedFile })
+  });
+  const data = await res.json();
+  result.textContent = data.result;
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-    const summarizeBtn = document.getElementById("summarizeBtn");
-    const qaBtn = document.getElementById("qaBtn");
-    const teachbackBtn = document.getElementById("teachbackBtn");
+/* ── Quiz modal ─────────────────────────── */
+function openQuizModal() {
+  document.getElementById('quizOverlay').classList.add('open');
+}
 
-    const savedFile = localStorage.getItem("uploadedFile");
-    const savedFileName = localStorage.getItem("uploadedFileName");
+function closeQuizModal() {
+  document.getElementById('quizOverlay').classList.remove('open');
+}
 
-    if (savedFile) {
-        uploadedFile = savedFile;
-
-        fileName.textContent = savedFileName;
-
-        summarizeBtn.disabled = false;
-        qaBtn.disabled = false;
-        teachbackBtn.disabled = false;
-    }
+// Close on backdrop click
+document.getElementById('quizOverlay').addEventListener('click', function (e) {
+  if (e.target === this) closeQuizModal();
 });
 
+// Close on Escape
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeQuizModal();
+});
 
+// Stepper
+document.getElementById('stepDown').addEventListener('click', () => {
+  quizCount = Math.max(1, quizCount - 1);
+  document.getElementById('stepVal').textContent = quizCount;
+});
+
+document.getElementById('stepUp').addEventListener('click', () => {
+  quizCount = Math.min(20, quizCount + 1);
+  document.getElementById('stepVal').textContent = quizCount;
+});
+
+// Difficulty pills
+document.querySelectorAll('.diff-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.diff-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    quizDifficulty = pill.dataset.val;
+  });
+});
+
+// Start — passes values to your quiz() function
+function startQuiz() {
+  closeQuizModal();
+  quiz(quizCount, quizDifficulty);
+}
+
+// Placeholder — replace with your real quiz logic
+async function quiz(count, difficulty) {
+  if (!uploadedFile) return alert("Upload a file first");
+  console.log(`Starting quiz: ${count} questions, ${difficulty} difficulty, file: ${uploadedFile}`);
+    if (!uploadedFile) return alert("Upload a file first");
+  const res  = await fetch("pdf/quiz/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename: uploadedFile,count:count,difficulty:difficulty })
+  });
+  const data = await res.json();
+  result.textContent = data.result;
+}
+
+/* ── Restore session ────────────────────── */
+window.addEventListener("DOMContentLoaded", () => {
+  const savedFile     = sessionStorage.getItem("uploadedFile");
+  const savedFileName = sessionStorage.getItem("uploadedFileName");
+
+  if (savedFile) {
+    uploadedFile          = savedFile;
+    fileName.textContent  = savedFileName;
+    summarizeBtn.disabled = false;
+    qaBtn.disabled        = false;
+    teachbackBtn.disabled = false;
+    quizBtn.disabled      = false;
+  }
+});
 </script>
 
-{%endblock %}
+{% endblock %}

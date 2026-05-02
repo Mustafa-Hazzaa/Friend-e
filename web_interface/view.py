@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, url_for, redirect
-from flask_login import login_required, current_user
-
+from flask import Blueprint, render_template, url_for, redirect, request ,jsonify
+from flask_login import login_required, current_user, login_manager
+from werkzeug.security import check_password_hash
 view = Blueprint('view', __name__)
 
 
@@ -45,16 +45,17 @@ def programming():
 def account():
     return render_template("account.html", active_page="account",user=current_user)
 
-@view.route("/monitoring")
-@login_required
-def monitoring():
-    #     if request.method == "POST":
-    #     password = request.form.get("password")
-    #
-    #     if current_user.check_password(password):
-    #         session["tab_access_granted"] = True
-    #         return redirect(url_for("protected_tab"))
-    #
-    #     return "Wrong password", 401
-    #
-    return render_template("monitor.html")
+@view.route("/monitor")
+def monitor():
+    return render_template("monitor.html" ,active_page="monitor",user=current_user)
+
+
+@view.route("/check-monitor-password", methods=["POST"])
+def check_monitor_password():
+    data = request.get_json()
+    password = data.get("password")
+
+    if check_password_hash(current_user.password_hash,password):
+        return jsonify(success=True)
+
+    return jsonify(success=False)

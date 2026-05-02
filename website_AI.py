@@ -1,3 +1,6 @@
+import json
+import re
+
 from ollama import Client
 from extract import extract_text_from_pdf
 
@@ -29,7 +32,7 @@ STRICT RULES:
 """
 
 CHUNK_SYSTEM_PROMPT = """
-Summarize the following text in 2-3 sentences maximum.
+Summarize the following text in 2-3 sentences MAXIMUM.
 Plain text only. No markdown. No bullet points. No headers.
 Cover only the most important idea. Be very brief.
 """
@@ -38,6 +41,12 @@ COMBINE_SYSTEM_PROMPT = """
 Combine these summaries into one single flowing explanation.
 Plain sentences only. No markdown. No bullet points. No headers.
 Keep every important idea. Write in order. Be thorough.
+"""
+
+QUIZ_GENERATION_SYSTEM_PROMPT = """
+You are a quiz generator for children.
+You must respond with ONLY valid JSON — no explanation, no markdown, no extra text.
+The JSON must be a single object with a key 'questions' containing an array.
 """
 
 
@@ -162,9 +171,38 @@ class AIPlanner:
         Every hard word needs a fun simple explanation.
         Make the child feel like they are on an adventure discovering something amazing.
         No markdown. Just talking. Start with Ooooh! right now.
-        Keep it short — maximum 20 sentences total. Pick the most exciting ideas only.
+        Keep it short — MAXIMUM 20 sentences total. Pick the most exciting ideas only.
         But ALWAYS mention the real names of the important concepts and explain each one in simple words right after.
         A child should finish listening and know what these things are actually called.
         {clean}""",
         )
 
+    def generate_quiz(self, topic: str, count: int, difficulty: str) -> list:
+        user_prompt = (
+            f"Generate {count} quiz questions about '{topic}' at {difficulty} difficulty for children.\n"
+            "Each question must have:\n"
+            "  - id (number starting at 1)\n"
+            "  - question (one clear sentence)\n"
+            "  - answer (one short phrase, the correct answer)\n"
+            "  - explanation (one sentence explaining why the answer is correct)\n\n"
+            "Return ONLY this JSON structure, nothing else:\n"
+            '{"questions": [{"id": 1, "question": "...", "answer": "...", "explanation": "..."}]}'
+        )
+
+        raw = self._call(QUIZ_GENERATION_SYSTEM_PROMPT, user_prompt, model=FAST_MODEL)
+
+        # Strip accidental markdown fences
+        raw = re.sub(r"```json|```", "", raw).strip()
+
+        # Extract JSON object
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        if not match:
+            raise ValueError("Model did not return valid JSON")
+
+        parsed    = json.loads(match.group())
+        questions = parsed.get("questions", [])
+
+        if not questions:
+            raise ValueError("No questions generated")
+
+        return questions

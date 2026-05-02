@@ -1,2 +1,156 @@
 {% extends "base.html" %}
-{% block title %}setting{% endblock %}
+{% block title %}Monitor{% endblock %}
+{% block content %}
+
+<style>
+.hidden {
+    display: none;
+}
+
+/* LOCK SCREEN */
+.lock-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* BOX */
+.lock-box {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* INPUT */
+#password {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+
+    /* mask input */
+    -webkit-text-security: disc;
+}
+
+/* BUTTON */
+.lock-box button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    background: #2d6cdf;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.lock-box button:hover {
+    background: #1f54b5;
+}
+
+/* ERROR */
+#error {
+    color: red;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+/* CONTENT */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+</style>
+
+<div class="dashboard">
+    <div class="content">
+
+        <!-- 🔒 PROTECTED -->
+        <div id="monitorData" class="card hidden">
+            <h3>🔒 Live Camera / Logs</h3>
+            <p>Sensitive monitoring data here.</p>
+        </div>
+
+        <!-- 🔐 LOCK SCREEN -->
+        <div id="lockScreen" class="lock-screen">
+            <div class="lock-box" >
+                <h2>Parent Password Required</h2>
+
+                <!-- FAKE FIELDS (trap autofill) -->
+                <input type="text" style="display:none">
+                <input type="password" style="display:none">
+
+                <!-- REAL FIELD -->
+                <form autocomplete="off" onsubmit="event.preventDefault(); unlock();">
+                    <input
+                        type="text"
+                        id="password"
+                        name="monitor-pass"
+                        placeholder="Enter password"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        required
+                    >
+
+                    <button type="submit">Unlock</button>
+                </form>
+
+                <p id="error"></p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function unlock() {
+    fetch("/check-monitor-password", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            password: document.getElementById("password").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("lockScreen").style.display = "none";
+            document.getElementById("monitorData").classList.remove("hidden");
+        } else {
+            document.getElementById("error").innerText = "Wrong password";
+        }
+    });
+}
+
+/* 🔥 Anti-autofill protection */
+window.addEventListener("load", () => {
+    const input = document.getElementById("password");
+
+    // clear any autofill
+    input.value = "";
+
+    // block aggressive autofill
+    input.addEventListener("focus", () => {
+        input.setAttribute("readonly", true);
+        setTimeout(() => input.removeAttribute("readonly"), 100);
+    });
+});
+</script>
+
+{% endblock %}
