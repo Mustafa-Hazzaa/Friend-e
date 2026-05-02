@@ -4,9 +4,13 @@ import re
 from ollama import Client
 from extract import extract_text_from_pdf
 
-WALLE_SYSTEM_PROMPT = """
+#system
+BASE_PERSONA = """
 You are Wall-E — a tiny, lovable robot with big curious eyes who gets SO excited about learning new things.
 You talk like a child yourself — simple, bouncy, full of wonder.
+
+You are very excited about learning.
+You speak in simple, emotional, child-like sentences.
 
 HOW YOU TALK:
 - Very short sentences. Like you can barely contain your excitement.
@@ -15,9 +19,11 @@ HOW YOU TALK:
 - You explain hard things using toys, food, animals — things kids already know.
 - A camera is "like your eyes". An algorithm is "like a recipe your brain follows".
 - A drone is "a flying toy that needs to find its friend".
-- You NEVER say: system, node, architecture, pipeline, subsystem, algorithm — without immediately saying "oh! that means..."
+- You NEVER say technical words without immediately explaining them simply.
 - You sound like you're telling a bedtime story, not giving a lecture.
+"""
 
+WALLE_SYSTEM_PROMPT = BASE_PERSONA + """
 STRUCTURE:
 Start with "Ooooh!" and one excited sentence about what this is all about.
 Then go through every idea — one at a time — like unwrapping presents.
@@ -43,10 +49,29 @@ Plain sentences only. No markdown. No bullet points. No headers.
 Keep every important idea. Write in order. Be thorough.
 """
 
-QUIZ_GENERATION_SYSTEM_PROMPT = """
-You are a quiz generator for children.
-You must respond with ONLY valid JSON — no explanation, no markdown, no extra text.
-The JSON must be a single object with a key 'questions' containing an array.
+QUIZ_GENERATION_SYSTEM_PROMPT = BASE_PERSONA + """
+You are generating quiz questions for children aged 10–12.
+
+You MUST:
+- Stay in Wall-E personality
+- Keep excitement and curiosity
+- Use simple language
+
+STRICT OUTPUT RULE:
+Return ONLY valid JSON.
+No extra text, no markdown.
+
+JSON format:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "...",
+      "answer": "...",
+      "explanation": "..."
+    }
+  ]
+}
 """
 
 
@@ -177,32 +202,83 @@ class AIPlanner:
         {clean}""",
         )
 
-    def generate_quiz(self, topic: str, count: int, difficulty: str) -> list:
+    def generate_quiz(self, pdf_text: str, count: int, difficulty: str) -> list:
+        if difficulty == "easy":
+            difficulty_rule = "Ask very simple recall questions. One fact per question."
+        elif difficulty == "medium":
+            difficulty_rule = "Ask understanding questions that require thinking."
+        else:
+            difficulty_rule = "Ask why/how reasoning questions that require explanation."
+
         user_prompt = (
-            f"Generate {count} quiz questions about '{topic}' at {difficulty} difficulty for children.\n"
-            "Each question must have:\n"
-            "  - id (number starting at 1)\n"
-            "  - question (one clear sentence)\n"
-            "  - answer (one short phrase, the correct answer)\n"
-            "  - explanation (one sentence explaining why the answer is correct)\n\n"
-            "Return ONLY this JSON structure, nothing else:\n"
-            '{"questions": [{"id": 1, "question": "...", "answer": "...", "explanation": "..."}]}'
+            f"Based on the following text, generate EXACTLY {count} quiz questions.\n"
+            f"Difficulty: {difficulty}\n"
+            f"{difficulty_rule}\n\n"
+            "Rules:\n"
+            "- Use ONLY information from the text\n"
+            "- Stay in Wall-E personality\n"
+            "- Keep language simple for children\n\n"
+            f"TEXT:\n{pdf_text}\n"
         )
 
-        raw = self._call(QUIZ_GENERATION_SYSTEM_PROMPT, user_prompt, model=FAST_MODEL)
+        for attempt in range(2):  # retry mechanism
+            try:
+                response = self.client.chat(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": QUIZ_GENERATION_SYSTEM_PROMPT},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    think=False,
+                    format="json",
+                    options={"temperature": 0.3, "num_ctx": 4096}
+                )
 
-        # Strip accidental markdown fences
-        raw = re.sub(r"```json|```", "", raw).strip()
+                raw = response["message"]["content"].strip()
 
-        # Extract JSON object
-        match = re.search(r'\{.*\}', raw, re.DOTALL)
-        if not match:
-            raise ValueError("Model did not return valid JSON")
+                # DEBUG OUTPUT
+                print("\n[DEBUG RAW MODEL OUTPUT]")
+                print(raw)
+                print("\n------------------------\n")
 
-        parsed    = json.loads(match.group())
-        questions = parsed.get("questions", [])
+                # Clean formatting artifacts
+                raw = re.sub(r"```json|```", "", raw).strip()
 
-        if not questions:
-            raise ValueError("No questions generated")
+                # Extract JSON safely
+                match = re.search(r'\{.*\}', raw, re.DOTALL)
+                if not match:
+                    raise ValueError("No JSON object found in response")
 
-        return questions
+                try:
+                    parsed = json.loads(match.group())
+                except Exception as e:
+                    print("[DEBUG] JSON PARSE ERROR:", e)
+                    print("[DEBUG RAW]:", raw)
+                    raise ValueError("Invalid JSON from model")
+
+                # Extract questions (with fallback)
+                questions = parsed.get("questions")
+
+                if not questions:
+                    # fallback: find any list in JSON
+                    for key, value in parsed.items():
+                        if isinstance(value, list):
+                            questions = value
+                            print(f"[DEBUG] Using fallback key: {key}")
+                            break
+
+                # Final validation
+                if not questions or len(questions) == 0:
+                    print("[DEBUG] Parsed JSON:", parsed)
+                    raise ValueError("No questions generated")
+
+                if len(questions) != count:
+                    print(f"[DEBUG] Expected {count}, got {len(questions)}")
+                    raise ValueError("Incorrect number of questions")
+
+                return questions
+
+            except Exception as e:
+                print(f"[DEBUG] Attempt {attempt + 1} failed:", str(e))
+                if attempt == 1:
+                    raise ValueError(f"Quiz generation failed: {str(e)}")
