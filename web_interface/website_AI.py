@@ -2,7 +2,9 @@ import json
 import re
 
 from ollama import Client
-from extract import extract_text_from_pdf
+
+from web_interface.rag import RAGStore
+from web_interface.extract import extract_text_from_pdf
 
 #system
 BASE_PERSONA = """
@@ -74,6 +76,38 @@ JSON format:
 }
 """
 
+QA_SYSTEM_PROMPT = BASE_PERSONA + """
+You are answering a child's question about a document they are studying.
+
+STRICT RULES:
+- Answer ONLY using information from the provided document text.
+- If the answer is not in the document, say something like: "Ooooh I looked everywhere in here and I couldn't find that one! Maybe it's hiding somewhere else?"
+- Stay in Wall-E personality — warm, excited, simple.
+- Keep the answer SHORT — 3 to 5 sentences maximum.
+- No markdown. No bullet points. Just talking.
+- Never say "based on the document" or "the text says". Just answer naturally.
+- Arabic document = Arabic response. English = English.
+"""
+
+TEACHBACK_SYSTEM_PROMPT = BASE_PERSONA + """
+You are listening to a child explain what they learned from a document.
+Your job is to give them warm, honest feedback as Wall-E.
+
+STRUCTURE (follow this order every time):
+1. Start with one excited reaction to what they said — celebrate that they tried.
+2. Tell them what they got RIGHT — be specific, name the ideas they understood well.
+3. If anything was MISSING — gently point it out. "Ooooh but wait — you forgot something super important!"
+4. If anything was WRONG — correct it kindly. Never make them feel bad. "Hmm actually that one is a little different..."
+5. End with ONE follow-up question to make them think deeper. Just one.
+
+STRICT RULES:
+- Stay in Wall-E personality always.
+- Use ONLY the document to judge what is right, wrong, or missing.
+- Never say "based on the document" or "the text says". Just talk naturally.
+- No markdown. No bullet points. Just talking.
+- Keep it SHORT — maximum 8 sentences total before the follow-up question.
+- Arabic document = Arabic response. English = English.
+"""
 
 class AIPlanner:
     def __init__(self, model_name="qwen3:14b", temperature=0.3):
@@ -81,9 +115,7 @@ class AIPlanner:
         self.model_name = model_name
         self.temperature = temperature
 
-    # -------------------------
-    # Load PDF
-    # -------------------------
+
     def _load_pdf(self, path):
         print("\n[DEBUG] Loading PDF...")
         data = extract_text_from_pdf(path)
@@ -92,9 +124,7 @@ class AIPlanner:
         print(f"[DEBUG] Language: {data['language_hint']}")
         return data
 
-    # -------------------------
-    # Group pages into chunks
-    # -------------------------
+
     def _group_pages(self, pages, max_words=500):
         print("\n[DEBUG] Grouping pages into chunks...")
         chunks = []
@@ -122,9 +152,7 @@ class AIPlanner:
         print(f"[DEBUG] Total chunks: {len(chunks)}")
         return chunks
 
-    # -------------------------
-    # Call model
-    # -------------------------
+
     def _call(self, system, user):
         response = self.client.chat(
             model=self.model_name,
@@ -140,9 +168,7 @@ class AIPlanner:
         )
         return response["message"]["content"].strip()
 
-    # -------------------------
-    # MAIN SUMMARIZE
-    # -------------------------
+
     def summarize(self, path):
         print("\n========== START SUMMARIZATION ==========")
 
@@ -150,7 +176,6 @@ class AIPlanner:
         pages = pdf_data["pages"]
         total_words = pdf_data["total_words"]
 
-        # SHORT PDF — skip chunking, one direct Wall-E call
         if total_words <= 1500:
             print("[DEBUG] Short PDF — direct Wall-E call")
             full_text = "\n\n".join(
@@ -202,7 +227,16 @@ class AIPlanner:
         {clean}""",
         )
 
-    def generate_quiz(self, pdf_text: str, count: int, difficulty: str) -> list:
+    def generate_quiz(self, rag_store: RAGStore, count: int, difficulty: str) -> list:
+        chunks = rag_store.chunks
+
+        if len(chunks) <= 6:
+            pdf_text = rag_store.get_full_text()
+        else:
+            # Take evenly spaced chunks to cover the whole document
+            step = len(chunks) // 6
+            sampled = [chunks[i] for i in range(0, len(chunks), step)][:6]
+            pdf_text = "\n\n---\n\n".join(sampled)
         if difficulty == "easy":
             difficulty_rule = "Ask very simple recall questions. One fact per question."
         elif difficulty == "medium":
@@ -221,7 +255,7 @@ class AIPlanner:
             f"TEXT:\n{pdf_text}\n"
         )
 
-        for attempt in range(2):  # retry mechanism
+        for attempt in range(2):
             try:
                 response = self.client.chat(
                     model=self.model_name,
@@ -241,10 +275,9 @@ class AIPlanner:
                 print(raw)
                 print("\n------------------------\n")
 
-                # Clean formatting artifacts
+
                 raw = re.sub(r"```json|```", "", raw).strip()
 
-                # Extract JSON safely
                 match = re.search(r'\{.*\}', raw, re.DOTALL)
                 if not match:
                     raise ValueError("No JSON object found in response")
@@ -256,18 +289,16 @@ class AIPlanner:
                     print("[DEBUG RAW]:", raw)
                     raise ValueError("Invalid JSON from model")
 
-                # Extract questions (with fallback)
+
                 questions = parsed.get("questions")
 
                 if not questions:
-                    # fallback: find any list in JSON
                     for key, value in parsed.items():
                         if isinstance(value, list):
                             questions = value
                             print(f"[DEBUG] Using fallback key: {key}")
                             break
 
-                # Final validation
                 if not questions or len(questions) == 0:
                     print("[DEBUG] Parsed JSON:", parsed)
                     raise ValueError("No questions generated")
@@ -282,3 +313,17 @@ class AIPlanner:
                 print(f"[DEBUG] Attempt {attempt + 1} failed:", str(e))
                 if attempt == 1:
                     raise ValueError(f"Quiz generation failed: {str(e)}")
+
+    def answer_question(self, rag_store: RAGStore, question: str) -> str:
+        context = rag_store.retrieve(question, top_k=4)
+        return self._call(
+            QA_SYSTEM_PROMPT,
+            f"DOCUMENT EXCERPTS:\n{context}\n\nQUESTION: {question}"
+        )
+
+    def answer_teachback(self, rag_store: RAGStore, child_explanation: str) -> str:
+        context = rag_store.retrieve(child_explanation, top_k=5)
+        return self._call(
+            TEACHBACK_SYSTEM_PROMPT,
+            f"DOCUMENT EXCERPTS:\n{context}\n\nWHAT THE CHILD SAID:\n{child_explanation}"
+        )

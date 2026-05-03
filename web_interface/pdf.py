@@ -2,121 +2,163 @@ import os
 from flask import Blueprint, request, current_app, jsonify
 from werkzeug.utils import secure_filename
 
-from website_AI import AIPlanner
+from web_interface.website_AI import AIPlanner
+from .rag import RAGStore
+from .extract import extract_text_from_pdf
 
 pdf = Blueprint('pdf', __name__)
 
+
+_rag_cache: dict[str, RAGStore] = {}
+
+
+def _get_or_build_rag(filename: str, path: str) -> RAGStore:
+    if filename not in _rag_cache:
+        print(f"[RAG] Building store for: {filename}")
+        pdf_data = extract_text_from_pdf(path)
+        store = RAGStore()
+        store.build(pdf_data["pages"])
+        _rag_cache[filename] = store
+        print(f"[RAG] Store ready — {len(store.chunks)} chunks")
+    else:
+        print(f"[RAG] Cache hit for: {filename}")
+    return _rag_cache[filename]
+
+
+def _get_path(filename: str):
+    if not filename:
+        return None, (jsonify({"error": "No filename provided"}), 400)
+    path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+    if not os.path.exists(path):
+        return None, (jsonify({"error": "File not found"}), 404)
+    return path, None
+
+
+# =============================================================
 @pdf.route("/upload", methods=["POST"])
 def upload_pdf():
     file = request.files.get("file")
-
     if not file:
-        return {"error": "No file"}, 400
+        return jsonify({"error": "No file"}), 400
 
     filename = secure_filename(file.filename)
-
     upload_folder = current_app.config["UPLOAD_FOLDER"]
     os.makedirs(upload_folder, exist_ok=True)
-
     path = os.path.join(upload_folder, filename)
     file.save(path)
 
-    return {"filename": filename}
+    try:
+        store = _get_or_build_rag(filename, path)
+        return jsonify({
+            "filename": filename,
+            "chunks": len(store.chunks)
+        })
+    except Exception as e:
+        print(f"[ERROR] RAG build failed: {e}")
+        return jsonify({"error": "Failed to process PDF", "details": str(e)}), 500
 
+
+# =============================================================
 @pdf.route("/summarize", methods=["POST"])
 def summarize():
     data = request.json
     filename = data.get("filename")
 
-    if not filename:
-        return {"error": "No filename"}, 400
+    path, err = _get_path(filename)
+    if err:
+        return err
 
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
-    path = os.path.join(upload_folder, filename)
+    try:
+        ai = AIPlanner()
+        summary = ai.summarize(path)
+        return jsonify({"summary": summary})
+    except Exception as e:
+        print(f"[ERROR] Summarize failed: {e}")
+        return jsonify({"error": "Summarization failed", "details": str(e)}), 500
 
-    ai = AIPlanner()
-    summary = ai.summarize(path)
-    print(summary)
-    return {"summary": summary}
 
-
+# =============================================================
 @pdf.route("/quiz/generate", methods=["POST"])
 def quiz():
+    data = request.get_json(force=True)
+    filename   = data.get("filename")
+    count      = int(data.get("count", 5))
+    difficulty = data.get("difficulty", "medium")
+
+    print(f"\n[QUIZ] filename={filename} count={count} difficulty={difficulty}")
+
+    path, err = _get_path(filename)
+    if err:
+        return err
+
     try:
-        data = request.get_json(force=True)
-
-        filename   = data.get("filename")
-        count      = int(data.get("count", 5))
-        difficulty = data.get("difficulty", "medium")
-
-        print("\n========== QUIZ GENERATION ==========")
-        print(f"[DEBUG] filename:   {filename}")
-        print(f"[DEBUG] count:      {count}")
-        print(f"[DEBUG] difficulty: {difficulty}")
-
-        if not filename:
-            return jsonify({"error": "No filename provided"}), 400
-
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
-        path = os.path.join(upload_folder, filename)
-
-        print(f"[DEBUG] full path:  {path}")
-        print(f"[DEBUG] file exists: {os.path.exists(path)}")
-
-        if not os.path.exists(path):
-            return jsonify({"error": "File not found"}), 404
-
+        store = _get_or_build_rag(filename, path)
         ai = AIPlanner()
-
-        # -------------------------
-        # Extract PDF text
-        # -------------------------
-        pdf_data = ai._load_pdf(path)
-        pages = pdf_data["pages"]
-
-        pdf_text = "\n\n".join(
-            p["text"].strip() for p in pages if not p["is_empty"]
-        )
-
-        print(f"[DEBUG] extracted text length: {len(pdf_text)} chars")
-        print(f"[DEBUG] preview: {pdf_text[:200]}")
-
-        if not pdf_text.strip():
-            print("[DEBUG] ERROR: empty text extracted")
-            return jsonify({"error": "Could not extract text from PDF"}), 400
-
-        # -------------------------
-        # LIMIT TEXT (VERY IMPORTANT)
-        # -------------------------
-        words = pdf_text.split()
-        if len(words) > 2000:
-            print("[DEBUG] truncating text for quiz...")
-            pdf_text = " ".join(words[:2000])
-
-        # -------------------------
-        # Generate quiz
-        # -------------------------
-        print("[DEBUG] calling generate_quiz...")
-
-        try:
-            questions = ai.generate_quiz(pdf_text, count, difficulty)
-        except Exception as e:
-            print("[ERROR] Quiz generation failed:", str(e))
-            return jsonify({
-                "error": "Quiz generation failed",
-                "details": str(e)
-            }), 500
-
-        print(f"[DEBUG] questions generated: {len(questions)}")
-
-        if questions:
-            for q in questions:
-                print(f"[DEBUG] Q{q['id']}: {q['question']}")
-
-        print("=====================================\n")
-
+        questions = ai.generate_quiz(store, count, difficulty)
         return jsonify({"questions": questions})
-
     except Exception as e:
-        print("[FATAL ERROR]", str(e))
-        return jsonify({"error": "Server error", "details": str(e)}), 500
+        print(f"[ERROR] Quiz generation failed: {e}")
+        return jsonify({"error": "Quiz generation failed", "details": str(e)}), 500
+
+
+# =============================================================
+@pdf.route("/qa", methods=["POST"])
+def qa():
+    data = request.get_json(force=True)
+    filename = data.get("filename")
+    question = data.get("question")
+
+    print(f"\n[QA] filename={filename} question={question}")
+
+    if not question:
+        return jsonify({"error": "No question provided"}), 400
+
+    path, err = _get_path(filename)
+    if err:
+        return err
+
+    try:
+        store = _get_or_build_rag(filename, path)
+        ai = AIPlanner()
+        answer = ai.answer_question(store, question)
+        return jsonify({"answer": answer})
+    except Exception as e:
+        print(f"[ERROR] QA failed: {e}")
+        return jsonify({"error": "QA failed", "details": str(e)}), 500
+
+
+# =============================================================
+@pdf.route("/teachback", methods=["POST"])
+def teachback():
+    data = request.get_json(force=True)
+    filename    = data.get("filename")
+    explanation = data.get("explanation")
+
+    print(f"\n[TEACHBACK] filename={filename}")
+
+    if not explanation:
+        return jsonify({"error": "No explanation provided"}), 400
+
+    path, err = _get_path(filename)
+    if err:
+        return err
+
+    try:
+        store = _get_or_build_rag(filename, path)
+        ai = AIPlanner()
+        feedback = ai.answer_teachback(store, explanation)
+        return jsonify({"feedback": feedback})
+    except Exception as e:
+        print(f"[ERROR] Teachback failed: {e}")
+        return jsonify({"error": "Teachback failed", "details": str(e)}), 500
+
+
+# =============================================================
+@pdf.route("/clear", methods=["POST"])
+def clear_cache():
+    data = request.get_json(force=True)
+    filename = data.get("filename")
+    if filename and filename in _rag_cache:
+        del _rag_cache[filename]
+        print(f"[RAG] Cache cleared for: {filename}")
+    return jsonify({"status": "ok"})

@@ -304,7 +304,7 @@ input[type="file"] { display: none; }
     <button class="btn qa"        id="qaBtn"         onclick="ask()" disabled>Q&amp;A</button>
     <button class="btn teachback" id="teachbackBtn"  onclick="teachback()" disabled>Teachback</button>
 
-    <div class="result" id="result"></div>
+<!--    <div class="result" id="result"></div>-->
 
   </div>
 </div>
@@ -414,17 +414,25 @@ async function ask() {
 }
 
 async function teachback() {
-  if (!uploadedFile) return alert("Upload a file first");
-  const res  = await fetch("pdf/teachback", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename: uploadedFile })
-  });
-  const data = await res.json();
-  result.textContent = data.result;
+    if (!uploadedFile) return alert("Upload a file first");
+
+    const explanation = prompt("Explain what you learned from the document:");
+    if (!explanation) return;
+
+    const res = await fetch("pdf/teachback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            filename: uploadedFile,
+            explanation
+        })
+    });
+
+    const data = await res.json();
+    result.textContent = data.feedback;
 }
 
-/* ── Quiz modal ─────────────────────────── */
+/* ── Quiz modal-*/
 function openQuizModal() {
   document.getElementById('quizOverlay').classList.add('open');
 }
@@ -433,17 +441,17 @@ function closeQuizModal() {
   document.getElementById('quizOverlay').classList.remove('open');
 }
 
-// Close on backdrop click
+
 document.getElementById('quizOverlay').addEventListener('click', function (e) {
   if (e.target === this) closeQuizModal();
 });
 
-// Close on Escape
+
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') closeQuizModal();
 });
 
-// Stepper
+
 document.getElementById('stepDown').addEventListener('click', () => {
   quizCount = Math.max(1, quizCount - 1);
   document.getElementById('stepVal').textContent = quizCount;
@@ -454,7 +462,7 @@ document.getElementById('stepUp').addEventListener('click', () => {
   document.getElementById('stepVal').textContent = quizCount;
 });
 
-// Difficulty pills
+
 document.querySelectorAll('.diff-pill').forEach(pill => {
   pill.addEventListener('click', () => {
     document.querySelectorAll('.diff-pill').forEach(p => p.classList.remove('active'));
@@ -463,13 +471,13 @@ document.querySelectorAll('.diff-pill').forEach(pill => {
   });
 });
 
-// Start — passes values to your quiz() function
+
 function startQuiz() {
   closeQuizModal();
   quiz(quizCount, quizDifficulty);
 }
 
-// Placeholder — replace with your real quiz logic
+
 async function quiz(count, difficulty) {
   if (!uploadedFile) return alert("Upload a file first");
   console.log(`Starting quiz: ${count} questions, ${difficulty} difficulty, file: ${uploadedFile}`);
